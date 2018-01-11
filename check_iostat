@@ -170,10 +170,10 @@ while read DISK;do
 
         if [ ${_util} -ge $CRITICAL ];then
             TMP="CRIT"
-            (( nb_crit ++ ))
+            (( number_CRIT ++ ))
         elif [ ${_util} -ge $WARNING ];then
             TMP="WARN"
-            (( nb_warn ++ ))
+            (( number_WARN ++ ))
         else
             TMP="OK"
         fi
