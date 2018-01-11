@@ -1,0 +1,196 @@
+#!/bin/bash
+
+# VERSION 1.0 - 2018-01-11
+#
+# heck_iostat - check usage of lvm ThinPool
+#
+# Copyright (C) 2018 Alban Vidal <alban.vidal@zordhak.fr>
+#
+# GNU GENERAL PUBLIC LICENSE Version 3
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+################################################################################
+##########                       Exit number list:                    ########## 
+################################################################################
+# 0 OK
+# 1 WARNING
+# 2 CRITICAL
+# 3 UNKNOWN         Unknown Invalid command line arguments - see error bellow
+
+################################################################################
+##########                   Exit error number list:                  ########## 
+################################################################################
+
+################################################################################
+##########                        DEFAULTS OPTIONS                    ##########
+################################################################################
+WARNING=80
+CRITICAL=90
+
+################################################################################
+
+_SCRIPT_NAME_=${0##*/}
+
+# Print error messages
+function error()
+{
+    exit_nb=$1
+    shift
+    # NOTE: don't redirect in stderr « >&2 » , else nrpe can't read output
+#    echo "ERROR $exit_nb: $@" >&2
+    echo "ERROR $exit_nb: $@"
+    exit 3
+}
+
+# Usage (called by -h or --help)
+function usage()
+{
+
+    echo "Usage: $_SCRIPT_NAME_ [options] vg_name lv_name"
+    echo "Options:"
+    echo "    -w,--warning <percent>     define usage warning percent (between 0-100, default: 80)"
+    echo "    -c,--critical <percent>    define usage critical percent (between 0-100, default: 100)"
+    echo "    -h,--help                  print this help"
+    echo ""
+    echo "------------------------------------------------------------------------------------------"
+    echo "    check_iostat Copyright (C) 2018 Alban Vidal <alban.vidal@zordhak.fr>"
+    echo "    This program comes with ABSOLUTELY NO WARRANTY"
+    echo "    This is free software, and you are welcome to redistribute it under certain conditions"
+    echo "    GNU GENERAL PUBLIC LICENSE Version 3"
+    exit 0
+}
+
+function check_number()
+{
+    # $1 => arg
+    # $2 => number to check
+
+    # Check if not empty
+    if [[ $2 == "" ]]
+    then
+        error 12 $1 opts: option is empty - require a number
+    fi
+
+    # Check if is number
+    if ! [[ $2 =~ ^[0-9]+$ ]] # OK
+    then
+        error 13 $1 opts: $2 is not a number
+    fi
+
+    # Check if > 0 and < 100
+    if ! [ "$2" -ge 0 -a "$2" -le 100 ]
+    then
+        error 14 $1 opts: $2 need interval between 0-100
+    fi
+}
+
+# Check args
+opt="$1"
+while test ! -z "$opt" -a -z "${opt##-*}"
+do
+
+    case "$opt" in
+        "-h"|"--help")
+            usage
+            ;;
+        "-w"|"--warning")
+            check_number warning $2
+            WARNING=$2
+            shift
+            ;;
+        "-c"|"--critical")
+            check_number critical $2
+            CRITICAL=$2
+            shift
+            ;;
+        *)
+            error 4 Unknown option: $1
+            ;;
+    esac
+    shift
+    opt="$1"
+done
+
+# TEST if WARN > to CRIT => ERR
+if [ $WARNING -ge $CRITICAL ] ;then
+    error 6 WARNING \($WARNING\) can\'t be upper or equal to CRITICAL \($CRITICAL\)
+fi
+
+# Names of hard drives, only in one line
+HDD_LIST=$(echo -n $(sfdisk -s|grep '^/dev/sd'|awk '{print $1}'|sed 's/://g')|sort)
+
+RESULT=$(iostat -xyd -m $HDD_LIST 5 1)
+#       -x     Display extended statistics.
+#       -y     Omit first report with statistics since system boot, if displaying multiple records at given interval.
+#       -d     Display the device utilization report.
+#       -m     Display statistics in megabytes per second.
+# during 5 seconds
+# check 1 time
+
+nb_crit=0
+nb_warn=0
+
+RETURN=""
+
+while read DISK;do
+    Device=$(echo $DISK|awk '{print $1}')
+    # search column names:
+    if echo $Device|grep -q '^Device';then
+        HEAD=$(echo $DISK)
+    fi
+
+    # grep physical devices:
+    if echo $Device|grep -q '^sd';then
+        _util=$(echo $DISK|awk '{print $14}')
+#DEBUG
+#        echo $_util
+unset TMP
+        # delete « . » or « , » char
+        _util=${_util%%,*}
+        _util=${_util%%.*}
+
+        if [ ${_util} -ge 90 ];then
+            TMP="CRIT"
+            (( nb_crit ++ ))
+        elif [ ${_util} -ge 80 ];then
+            TMP="WARN"
+            (( nb_warn ++ ))
+        else
+            TMP="OK"
+        fi
+        # print end of result :
+#        echo " $Device : $DISK"
+#        echo ": $DISK"
+        RETURN="${RETURN}\n${TMP} ${DISK}"
+    fi
+done <<< $RESULT
+
+if [ $nb_crit -gt 0 ];then
+#    echo -e "CRIT, see details:${RETURN}"|column -t
+#    echo -e "$nb_crit $nb_warn CRIT, see details\nState: ${HEAD}\n${RETURN}"|column -t
+    echo -e "CRIT, see_details_above:\nState: ${HEAD}\n${RETURN}"|column -t
+    exit 2
+elif [ $nb_warn -gt 0 ];then
+#    echo -e "WARN, see details:\n${RETURN}"|column -t
+#    echo -e "$nb_crit $nb_warn WARN, see details\nState: ${HEAD}\n${RETURN}"|column -t
+    echo -e "WARN, see_details_above:\nState: ${HEAD}\n${RETURN}"|column -t
+    exit 1
+else
+#    echo -e "$nb_crit $nb_warn OK\nState: ${HEAD}\n${RETURN}"|column -t
+    echo -e "OK\nState: ${HEAD}\n${RETURN}"|column -t
+    exit 0
+fi
+
+################################################################################
