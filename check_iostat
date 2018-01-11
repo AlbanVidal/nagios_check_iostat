@@ -124,6 +124,7 @@ do
             error 4 Unknown option: $1
             ;;
     esac
+
     shift
     opt="$1"
 done
@@ -144,9 +145,11 @@ RESULT=$(iostat -xyd -m $HDD_LIST 5 1)
 # during 5 seconds
 # check 1 time
 
-nb_crit=0
-nb_warn=0
+# number of warning and critical error
+number_WARN=0
+number_CRIT=0
 
+# Initialise output return
 RETURN=""
 
 while read DISK;do
@@ -159,41 +162,33 @@ while read DISK;do
     # grep physical devices:
     if echo $Device|grep -q '^sd';then
         _util=$(echo $DISK|awk '{print $14}')
-#DEBUG
-#        echo $_util
-unset TMP
+        
+        unset TMP
         # delete « . » or « , » char
         _util=${_util%%,*}
         _util=${_util%%.*}
 
-        if [ ${_util} -ge 90 ];then
+        if [ ${_util} -ge $CRITICAL ];then
             TMP="CRIT"
             (( nb_crit ++ ))
-        elif [ ${_util} -ge 80 ];then
+        elif [ ${_util} -ge $WARNING ];then
             TMP="WARN"
             (( nb_warn ++ ))
         else
             TMP="OK"
         fi
-        # print end of result :
-#        echo " $Device : $DISK"
-#        echo ": $DISK"
+        # Indent in output :
         RETURN="${RETURN}\n${TMP} ${DISK}"
     fi
 done <<< $RESULT
 
-if [ $nb_crit -gt 0 ];then
-#    echo -e "CRIT, see details:${RETURN}"|column -t
-#    echo -e "$nb_crit $nb_warn CRIT, see details\nState: ${HEAD}\n${RETURN}"|column -t
+if   [ $number_CRIT -gt 0 ];then
     echo -e "CRIT, see_details_above:\nState: ${HEAD}\n${RETURN}"|column -t
     exit 2
-elif [ $nb_warn -gt 0 ];then
-#    echo -e "WARN, see details:\n${RETURN}"|column -t
-#    echo -e "$nb_crit $nb_warn WARN, see details\nState: ${HEAD}\n${RETURN}"|column -t
+elif [ $number_WARN -gt 0 ];then
     echo -e "WARN, see_details_above:\nState: ${HEAD}\n${RETURN}"|column -t
     exit 1
 else
-#    echo -e "$nb_crit $nb_warn OK\nState: ${HEAD}\n${RETURN}"|column -t
     echo -e "OK\nState: ${HEAD}\n${RETURN}"|column -t
     exit 0
 fi
