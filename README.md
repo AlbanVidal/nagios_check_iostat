@@ -16,28 +16,28 @@ Options:
 
 # Usage examples
 ``` shell
-Check only sda and sdb devices:
+# Check only sda and sdb devices:
 check_iostat --devices 'sda|sdb'
     OK
     State:  Device:  rrqm/s  wrqm/s  r/s   w/s     rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util
     OK      sdb      0,00    0,00    0,00  0,00    0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00
     OK      sda      0,00    163,40  0,00  592,80  0,00   3,16   10,90     1,44      2,44   0,00     2,44     0,03   1,92
 
-Check only sdd and md* devices:
+# Check only sdd and md* devices:
 check_iostat --devices 'sdd|md'
     OK
     State:  Device:  rrqm/s  wrqm/s  r/s   w/s   rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util
     OK      sdd      0,00    0,00    0,00  1,60  0,00   0,00   3,00      0,01      4,00   0,00     4,00     4,00   0,64
     OK      md0      0,00    0,00    0,00  0,00  0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00
 
-Change range Waning and Critical:
+# Change range Waning and Critical:
 check_iostat -w 90 -c 95
     OK
     State:  Device:  rrqm/s  wrqm/s  r/s   w/s      rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util
     OK      sdb      0,00    0,00    0,00  0,00     0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00
     OK      sda      0,00    283,80  0,00  1399,80  0,00   7,62   11,15     5,01      3,58   0,00     3,58     0,04   5,04
 
-Change range Waning and Critical:
+# Change range Waning and Critical:
 check_iostat -w 5 -c 10
     WARN,   see_details_above:
     State:  Device:             rrqm/s  wrqm/s  r/s   w/s      rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util
