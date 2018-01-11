@@ -13,7 +13,7 @@ Options:
 ```
 
 # Example to add this in nrpe
- + Copie this script in `/usr/lib/nagios/plugins` directory
+ + Copy this script in `/usr/lib/nagios/plugins` directory
 
  + Create file `/etc/nagios/nrpe.d/check_iostat.cfg` with this content:
 ``` shell
