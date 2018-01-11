@@ -36,6 +36,7 @@
 # 12 => option is empty - require a number
 # 13 => opts: x is not a number
 # 14 => opts: x need interval between 0-100
+# 15 => --devices option require exrp, see examples
 ################################################################################
 
 ################################################################################
@@ -43,6 +44,7 @@
 ################################################################################
 WARNING=80
 CRITICAL=90
+DISKS_EXPR="sd|mmc"
 
 ################################################################################
 
@@ -65,15 +67,55 @@ function usage()
 
     echo "Usage: $_SCRIPT_NAME_ [options]"
     echo "Options:"
-    echo "    -w,--warning <percent>     define usage warning percent (between 0-100, default: 80)"
-    echo "    -c,--critical <percent>    define usage critical percent (between 0-100, default: 100)"
-    echo "    -h,--help                  print this help"
+    echo "    -d, --devices  <disks_expr>    expression of disks search (defaut: sd|mmc)"
+    echo "    -w, --warning  <percent>       define usage warning percent (between 0-100, default: 80)"
+    echo "    -c, --critical <percent>       define usage critical percent (between 0-100, default: 100)"
+    echo "    -e, --examples                 show usage examples"
+    echo "    -h, --help                     print this help"
     echo ""
     echo "------------------------------------------------------------------------------------------"
     echo "    check_iostat Copyright (C) 2018 Alban Vidal <alban.vidal@zordhak.fr>"
     echo "    This program comes with ABSOLUTELY NO WARRANTY"
     echo "    This is free software, and you are welcome to redistribute it under certain conditions"
     echo "    GNU GENERAL PUBLIC LICENSE Version 3"
+    exit 0
+}
+
+function examples()
+{
+    yellow="$(tput setaf 3)"
+    green="$(tput setaf 2)"
+    reset="$(tput sgr0)"
+    echo "${yellow}Usage examples:${reset}"
+    echo ""
+    echo "${green}Check only sda and sdb devices:${reset}"
+    echo "${yellow}check_iostat --devices 'sda|sdb'${reset}"
+    echo "    OK"
+    echo "    State:  Device:  rrqm/s  wrqm/s  r/s   w/s     rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
+    echo "    OK      sdb      0,00    0,00    0,00  0,00    0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00"
+    echo "    OK      sda      0,00    163,40  0,00  592,80  0,00   3,16   10,90     1,44      2,44   0,00     2,44     0,03   1,92"
+    echo ""
+    echo "${green}Check only sdd and md* devices:${reset}"
+    echo "${yellow}check_iostat --devices 'sdd|md'${reset}"
+    echo "    OK"
+    echo "    State:  Device:  rrqm/s  wrqm/s  r/s   w/s   rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
+    echo "    OK      sdd      0,00    0,00    0,00  1,60  0,00   0,00   3,00      0,01      4,00   0,00     4,00     4,00   0,64"
+    echo "    OK      md0      0,00    0,00    0,00  0,00  0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00"
+    echo ""
+    echo "${green}Change range Waning and Critical:${reset}"
+    echo "${yellow}check_iostat -w 90 -c 95${reset}"
+    echo "    OK"
+    echo "    State:  Device:  rrqm/s  wrqm/s  r/s   w/s      rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
+    echo "    OK      sdb      0,00    0,00    0,00  0,00     0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00"
+    echo "    OK      sda      0,00    283,80  0,00  1399,80  0,00   7,62   11,15     5,01      3,58   0,00     3,58     0,04   5,04"
+    echo ""
+    echo "${green}Change range Waning and Critical:${reset}"
+    echo "${yellow}check_iostat -w 5 -c 10${reset}"
+    echo "    WARN,   see_details_above:"
+    echo "    State:  Device:             rrqm/s  wrqm/s  r/s   w/s      rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
+    echo "    OK      sdb                 0,00    0,00    0,00  0,00     0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00"
+    echo "    WARN    sda                 0,00    253,80  0,40  1264,60  0,00   6,88   11,14     5,08      4,01   0,00     4,01     0,04   5,12"
+    echo ""
     exit 0
 }
 
@@ -110,6 +152,17 @@ do
         "-h"|"--help")
             usage
             ;;
+        "-e"|"--examples")
+            examples
+            ;;
+        "-d"|"--devices")
+            if ! [ -z "$2" ] ;then
+                DISKS_EXPR=$2
+            else
+                error 15 --devices option require exrp, see examples
+            fi
+            shift
+            ;;
         "-w"|"--warning")
             check_number warning $2
             WARNING=$2
@@ -135,7 +188,7 @@ if [ $WARNING -ge $CRITICAL ] ;then
 fi
 
 # Names of hard drives, only in one line
-HDD_LIST=$(echo -n $(sfdisk -s|grep '^/dev/sd'|awk '{print $1}'|sed 's/://g')|sort)
+HDD_LIST=$(echo -n $(sfdisk -s|grep -E "^/dev/${DISKS_EXPR}"|awk '{print $1}'|sed 's/://g')|sort)
 
 RESULT=$(iostat -xyd -m $HDD_LIST 5 1)
 #       -x     Display extended statistics.
@@ -160,7 +213,7 @@ while read DISK;do
     fi
 
     # grep physical devices:
-    if echo $Device|grep -q '^sd';then
+    if echo $Device|grep -q -E "^${DISKS_EXPR}";then
         _util=$(echo $DISK|awk '{print $14}')
         
         unset TMP
