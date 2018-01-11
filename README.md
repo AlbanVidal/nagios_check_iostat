@@ -3,6 +3,17 @@ nagios check iostat
 
 Check iostat of physical devices
 
+# Dependances
+
+`iostat`, `column`, `awk` and `sfdisk` binarys are required, to install on Debian/Ubuntu system:
+``` shell
+# Debian 9 / Ubuntu
+apt install sysstat gawk bsdmainutils util-linux
+
+# Debian 10
+apt install sysstat gawk bsdmainutils fdisk
+```
+
 # Usage
 ``` shell
 check_iostat [options]
