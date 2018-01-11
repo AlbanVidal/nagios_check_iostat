@@ -116,6 +116,13 @@ function examples()
     echo "    OK      sdb                 0,00    0,00    0,00  0,00     0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00"
     echo "    WARN    sda                 0,00    253,80  0,40  1264,60  0,00   6,88   11,14     5,08      4,01   0,00     4,01     0,04   5,12"
     echo ""
+    echo "${green}On Raspberry Pi (with Raspbian)${reset}"
+    echo "${yellow}check_iostat${reset}"
+    echo "OK"
+    echo "State:  Device:  rrqm/s  wrqm/s  r/s   w/s   rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
+    echo "OK      mmcblk0  0.00    0.00    0.00  0.00  0.00   0.00   0.00      0.00      0.00   0.00     0.00     0.00   0.00"
+    echo ""
+
     exit 0
 }
 
@@ -236,10 +243,10 @@ while read DISK;do
 done <<< $RESULT
 
 if   [ $number_CRIT -gt 0 ];then
-    echo -e "CRIT, see_details_above:\nState: ${HEAD}\n${RETURN}"|column -t
+    echo -e "CRITICAL, see_details_above:\nState: ${HEAD}\n${RETURN}"|column -t
     exit 2
 elif [ $number_WARN -gt 0 ];then
-    echo -e "WARN, see_details_above:\nState: ${HEAD}\n${RETURN}"|column -t
+    echo -e "WARNING, see_details_above:\nState: ${HEAD}\n${RETURN}"|column -t
     exit 1
 else
     echo -e "OK\nState: ${HEAD}\n${RETURN}"|column -t
