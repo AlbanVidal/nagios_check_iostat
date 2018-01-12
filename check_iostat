@@ -35,7 +35,7 @@
 # 6  => WARNING can't be upper or equal to CRITICAL
 # 12 => option is empty - require a number
 # 13 => opts: x is not a number
-# 14 => opts: x need interval between 0-100
+# 14 => opts: x need interval between Y-Z
 # 15 => --devices option require exrp, see examples
 ################################################################################
 
@@ -45,6 +45,7 @@
 WARNING=80
 CRITICAL=90
 DISKS_EXPR="sd|mmc"
+INTERVAL=5
 
 ################################################################################
 
@@ -68,6 +69,7 @@ function usage()
     echo "Usage: $_SCRIPT_NAME_ [options]"
     echo "Options:"
     echo "    -d, --devices  <disks_expr>    expression of disks search (defaut: sd|mmc)"
+    echo "    -i, --interval <interval>      specifies the amount of time in seconds between each report (between 1-10, default: 5)"
     echo "    -w, --warning  <percent>       define usage warning percent (between 0-100, default: 80)"
     echo "    -c, --critical <percent>       define usage critical percent (between 0-100, default: 100)"
     echo "    -e, --examples                 show usage examples"
@@ -90,37 +92,44 @@ function examples()
     echo ""
     echo "${green}Check only sda and sdb devices:${reset}"
     echo "${yellow}check_iostat --devices 'sda|sdb'${reset}"
-    echo "    OK"
-    echo "    State:  Device:  rrqm/s  wrqm/s  r/s   w/s     rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
-    echo "    OK      sdb      0,00    0,00    0,00  0,00    0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00"
-    echo "    OK      sda      0,00    163,40  0,00  592,80  0,00   3,16   10,90     1,44      2,44   0,00     2,44     0,03   1,92"
+    echo "  OK"
+    echo "  State:  Device:  rrqm/s  wrqm/s  r/s   w/s     rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
+    echo "  OK      sdb      0,00    0,00    0,00  0,00    0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00"
+    echo "  OK      sda      0,00    163,40  0,00  592,80  0,00   3,16   10,90     1,44      2,44   0,00     2,44     0,03   1,92"
     echo ""
     echo "${green}Check only sdd and md* devices:${reset}"
     echo "${yellow}check_iostat --devices 'sdd|md'${reset}"
-    echo "    OK"
-    echo "    State:  Device:  rrqm/s  wrqm/s  r/s   w/s   rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
-    echo "    OK      sdd      0,00    0,00    0,00  1,60  0,00   0,00   3,00      0,01      4,00   0,00     4,00     4,00   0,64"
-    echo "    OK      md0      0,00    0,00    0,00  0,00  0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00"
+    echo "  OK"
+    echo "  State:  Device:  rrqm/s  wrqm/s  r/s   w/s   rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
+    echo "  OK      sdd      0,00    0,00    0,00  1,60  0,00   0,00   3,00      0,01      4,00   0,00     4,00     4,00   0,64"
+    echo "  OK      md0      0,00    0,00    0,00  0,00  0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00"
     echo ""
     echo "${green}Change range Waning and Critical:${reset}"
     echo "${yellow}check_iostat -w 90 -c 95${reset}"
-    echo "    OK"
-    echo "    State:  Device:  rrqm/s  wrqm/s  r/s   w/s      rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
-    echo "    OK      sdb      0,00    0,00    0,00  0,00     0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00"
-    echo "    OK      sda      0,00    283,80  0,00  1399,80  0,00   7,62   11,15     5,01      3,58   0,00     3,58     0,04   5,04"
+    echo "  OK"
+    echo "  State:  Device:  rrqm/s  wrqm/s  r/s   w/s      rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
+    echo "  OK      sdb      0,00    0,00    0,00  0,00     0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00"
+    echo "  OK      sda      0,00    283,80  0,00  1399,80  0,00   7,62   11,15     5,01      3,58   0,00     3,58     0,04   5,04"
     echo ""
     echo "${green}Change range Waning and Critical:${reset}"
     echo "${yellow}check_iostat -w 5 -c 10${reset}"
-    echo "    WARN,   see_details_above:"
-    echo "    State:  Device:             rrqm/s  wrqm/s  r/s   w/s      rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
-    echo "    OK      sdb                 0,00    0,00    0,00  0,00     0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00"
-    echo "    WARN    sda                 0,00    253,80  0,40  1264,60  0,00   6,88   11,14     5,08      4,01   0,00     4,01     0,04   5,12"
+    echo "  WARN,   see_details_above:"
+    echo "  State:  Device:             rrqm/s  wrqm/s  r/s   w/s      rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
+    echo "  OK      sdb                 0,00    0,00    0,00  0,00     0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00"
+    echo "  WARN    sda                 0,00    253,80  0,40  1264,60  0,00   6,88   11,14     5,08      4,01   0,00     4,01     0,04   5,12"
     echo ""
     echo "${green}On Raspberry Pi (with Raspbian)${reset}"
     echo "${yellow}check_iostat${reset}"
-    echo "OK"
-    echo "State:  Device:  rrqm/s  wrqm/s  r/s   w/s   rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
-    echo "OK      mmcblk0  0.00    0.00    0.00  0.00  0.00   0.00   0.00      0.00      0.00   0.00     0.00     0.00   0.00"
+    echo "  OK"
+    echo "  State:  Device:  rrqm/s  wrqm/s  r/s   w/s   rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
+    echo "  OK      mmcblk0  0.00    0.00    0.00  0.00  0.00   0.00   0.00      0.00      0.00   0.00     0.00     0.00   0.00"
+    echo ""
+    echo "${green}Change interval, only in sda and sdb, warning 50${reset}"
+    echo "${yellow}check_iostat -i 1 -d 'sda|sdd' -w 50${reset}"
+    echo "  CRITICAL,  see_details_above:"
+    echo "  State:     Device:             rrqm/s  wrqm/s  r/s   w/s       rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util"
+    echo "  CRIT       sda                 0,00    86,00   0,00  35784,00  0,00   10,16  0,58      8,91      0,24   0,00     0,24     0,03   94,80"
+    echo "  OK         sdd                 0,00    0,00    0,00  0,00      0,00   0,00   0,00      0,00      0,00   0,00     0,00     0,00   0,00"
     echo ""
 
     exit 0
@@ -129,24 +138,30 @@ function examples()
 function check_number()
 {
     # $1 => arg
+    local arg=$1
     # $2 => number to check
+    local check=$2
+    # $3 => min
+    local min=$3
+    # $4 => max
+    local max=$4
 
     # Check if not empty
-    if [[ $2 == "" ]]
+    if [[ $check == "" ]]
     then
-        error 12 $1 opts: option is empty - require a number
+        error 12 $arg opts: option is empty - require a number
     fi
 
     # Check if is number
-    if ! [[ $2 =~ ^[0-9]+$ ]] # OK
+    if ! [[ $check =~ ^[0-9]+$ ]] # OK
     then
-        error 13 $1 opts: $2 is not a number
+        error 13 $arg opts: $check is not a number
     fi
 
     # Check if > 0 and < 100
-    if ! [ "$2" -ge 0 -a "$2" -le 100 ]
+    if ! [ "$2" -ge $min -a "$check" -le $max ]
     then
-        error 14 $1 opts: $2 need interval between 0-100
+        error 14 $arg opts: $check need interval between ${min}-${max}
     fi
 }
 
@@ -170,13 +185,18 @@ do
             fi
             shift
             ;;
+        "-i"|"--interval")
+            check_number warning $2 1 10 # test if INTERVAL is between 1-10
+            INTERVAL=$2
+            shift
+            ;;
         "-w"|"--warning")
-            check_number warning $2
+            check_number warning $2 0 100 # test if WARNING is between 0-100
             WARNING=$2
             shift
             ;;
         "-c"|"--critical")
-            check_number critical $2
+            check_number critical $2 0 100 # test if CRITICAL is between 0-100
             CRITICAL=$2
             shift
             ;;
@@ -197,12 +217,12 @@ fi
 # Names of hard drives, only in one line
 HDD_LIST=$(echo -n $(sfdisk -s|grep -E "^/dev/${DISKS_EXPR}"|awk '{print $1}'|sed 's/://g')|sort)
 
-RESULT=$(iostat -xyd -m $HDD_LIST 5 1)
+RESULT=$(iostat -xyd -m $HDD_LIST $INTERVAL 1)
 #       -x     Display extended statistics.
 #       -y     Omit first report with statistics since system boot, if displaying multiple records at given interval.
 #       -d     Display the device utilization report.
 #       -m     Display statistics in megabytes per second.
-# during 5 seconds
+# during X seconds
 # check 1 time
 
 # number of warning and critical error
