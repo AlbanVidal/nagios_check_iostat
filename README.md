@@ -58,9 +58,9 @@ check_iostat -w 5 -c 10
 
 # On Raspberry Pi (with Raspbian):
 check_iostat
-OK
-State:  Device:  rrqm/s  wrqm/s  r/s   w/s   rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util
-OK      mmcblk0  0.00    0.00    0.00  0.00  0.00   0.00   0.00      0.00      0.00   0.00     0.00     0.00   0.00
+  OK
+  State:  Device:  rrqm/s  wrqm/s  r/s   w/s   rMB/s  wMB/s  avgrq-sz  avgqu-sz  await  r_await  w_await  svctm  %util
+  OK      mmcblk0  0.00    0.00    0.00  0.00  0.00   0.00   0.00      0.00      0.00   0.00     0.00     0.00   0.00
 
 # Change interval, only in sda and sdb, warning 50:
 check_iostat -i 1 -d 'sda|sdd' -w 50
