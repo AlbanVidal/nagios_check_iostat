@@ -139,12 +139,12 @@ function check_number()
 {
     # $1 => arg
     local arg=$1
-    # $2 => number to check
-    local check=$2
-    # $3 => min
-    local min=$3
-    # $4 => max
-    local max=$4
+    # $2 => min
+    local min=$2
+    # $3 => max
+    local max=$3
+    # $4 => number to check
+    local check=$4
 
     # Check if not empty
     if [[ $check == "" ]]
@@ -186,17 +186,17 @@ do
             shift
             ;;
         "-i"|"--interval")
-            check_number warning $2 1 10 # test if INTERVAL is between 1-10
+            check_number warning  1 10  $2 # test if INTERVAL is between 1-10
             INTERVAL=$2
             shift
             ;;
         "-w"|"--warning")
-            check_number warning $2 0 100 # test if WARNING is between 0-100
+            check_number warning  0 100 $2 # test if WARNING is between 0-100
             WARNING=$2
             shift
             ;;
         "-c"|"--critical")
-            check_number critical $2 0 100 # test if CRITICAL is between 0-100
+            check_number critical 0 100 $2 # test if CRITICAL is between 0-100
             CRITICAL=$2
             shift
             ;;
