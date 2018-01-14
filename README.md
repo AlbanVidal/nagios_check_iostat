@@ -7,10 +7,10 @@ Check iostat of physical devices
 
 `iostat`, `column`, `awk` and `sfdisk` binarys are required, to install on Debian/Ubuntu system:
 ``` shell
-# Debian 9 / Ubuntu
+# Debian 9 / Ubuntu <= 17.04
 apt install sysstat gawk bsdmainutils util-linux
 
-# Debian 10
+# Debian 10 / Ubuntu 17.10
 apt install sysstat gawk bsdmainutils fdisk
 ```
 
