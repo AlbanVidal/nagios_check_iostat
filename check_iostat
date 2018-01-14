@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# VERSION 1.1 - 2018-01-11
+# VERSION 1.2 - 2018-01-12
 #
 # check_iostat - check usage of lvm ThinPool
 #
@@ -51,6 +51,13 @@ INTERVAL=5
 
 _SCRIPT_NAME_=${0##*/}
 
+################################################################################
+## COLORS
+reset="$(tput sgr0)"
+red="$(tput setaf 1)"
+green="$(tput setaf 2)"
+yellow="$(tput setaf 3)"
+
 # Print error messages
 function error()
 {
@@ -76,6 +83,37 @@ function usage()
     echo "    -h, --help                     print this help"
     echo ""
     echo "------------------------------------------------------------------------------------------"
+    echo ""
+    echo "${green}REPORTS Values — see man iostat(1) for more details${reset}"
+    echo ""
+    echo "${yellow}rrqm/s${reset}"
+    echo "    The number of read requests merged per second that were queued to the device."
+    echo "${yellow}wrqm/s${reset}"
+    echo "    The number of write requests merged per second that were queued to the device."
+    echo "${yellow}r/s${reset}"
+    echo "    The number (after merges) of read requests completed per second for the device."
+    echo "${yellow}w/s${reset}"
+    echo "    The number (after merges) of write requests completed per second for the device."
+    echo "${yellow}rsec/s (rkB/s, rMB/s)${reset}"
+    echo "    The number of sectors (kilobytes,megabytes) read from the device per second."
+    echo "${yellow}wsec/s (wkB/s, wMB/s)${reset}"
+    echo "    The number of sectors (kilobytes, megabytes) written to the device per second."
+    echo "${yellow}avgrq-sz${reset}"
+    echo "    The average size (in sectors) of the requests that were issued to the device."
+    echo "${yellow}avgqu-sz${reset}"
+    echo "    The average queue length of the requests that were issued to the device."
+    echo "${yellow}await${reset}"
+    echo "    The  average time (in milliseconds) for I/O requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them."
+    echo "${yellow}r_await${reset}"
+    echo "    The average time (in milliseconds) for read requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them."
+    echo "${yellow}w_await${reset}"
+    echo "    The  average  time  (in  milliseconds)  for write requests issued to the device to be served. This includes the time spent by the requests in queue and the time spent servicing them."
+    echo "${yellow}svctm${reset}"
+    echo "    The average service time (in milliseconds) for I/O requests that were issued to the device. ${red}Warning! Do not trust this field any more. This field will be removed in a future sysstat version.${reset}"
+    echo "${yellow}%util${reset}"
+    echo "    Percentage  of elapsed time during which I/O requests were issued to the device (bandwidth utilization for the device). Device saturation occurs when this value is close to 100% for devices serving requests serially. But for devices serving requests in parallel, such as RAID arrays and modern SSDs, this number does not reflect their performance limits."
+    echo ""
+    echo "------------------------------------------------------------------------------------------"
     echo "    check_iostat Copyright (C) 2018 Alban Vidal <alban.vidal@zordhak.fr>"
     echo "    This program comes with ABSOLUTELY NO WARRANTY"
     echo "    This is free software, and you are welcome to redistribute it under certain conditions"
@@ -85,9 +123,6 @@ function usage()
 
 function examples()
 {
-    yellow="$(tput setaf 3)"
-    green="$(tput setaf 2)"
-    reset="$(tput sgr0)"
     echo "${yellow}Usage examples:${reset}"
     echo ""
     echo "${green}Check only sda and sdb devices:${reset}"
@@ -230,7 +265,7 @@ number_WARN=0
 number_CRIT=0
 
 # Initialise output return
-RETURN=""
+#RETURN=""
 
 while read DISK;do
     Device=$(echo $DISK|awk '{print $1}')
@@ -260,7 +295,7 @@ while read DISK;do
         # Indent in output :
         RETURN="${RETURN}\n${TMP} ${DISK}"
     fi
-done <<< $RESULT
+done <<< "$RESULT"
 
 if   [ $number_CRIT -gt 0 ];then
     echo -e "CRITICAL, see_details_above:\nState: ${HEAD}\n${RETURN}"|column -t
