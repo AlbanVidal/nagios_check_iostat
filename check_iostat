@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# VERSION 1.2 - 2018-01-12
+# VERSION 1.3 - 2018-01-17
 #
 # check_iostat - check usage of lvm ThinPool
 #
@@ -46,6 +46,7 @@ WARNING=80
 CRITICAL=90
 DISKS_EXPR="sd|mmc"
 INTERVAL=5
+PERF_DATA=false
 
 ################################################################################
 
@@ -75,11 +76,12 @@ function usage()
 
     echo "Usage: $_SCRIPT_NAME_ [options]"
     echo "Options:"
-    echo "    -d, --devices  <disks_expr>    expression of disks search (defaut: sd|mmc)"
-    echo "    -i, --interval <interval>      specifies the amount of time in seconds between each report (between 1-10, default: 5)"
-    echo "    -w, --warning  <percent>       define usage warning percent (between 0-100, default: 80)"
-    echo "    -c, --critical <percent>       define usage critical percent (between 0-100, default: 100)"
-    echo "    -e, --examples                 show usage examples"
+    echo "    -d, --devices  <disks_expr>    Expression of disks search (defaut: sd|mmc)"
+    echo "    -i, --interval <interval>      Specifies the amount of time in seconds between each report (between 1-10, default: 5)"
+    echo "    -w, --warning  <percent>       Define usage warning percent (between 0-100, default: 80)"
+    echo "    -c, --critical <percent>       Define usage critical percent (between 0-100, default: 100)"
+    echo "    -p, --perf-data                Enable performance data output"
+    echo "    -e, --examples                 Show usage examples"
     echo "    -h, --help                     print this help"
     echo ""
     echo "------------------------------------------------------------------------------------------"
@@ -235,6 +237,9 @@ do
             CRITICAL=$2
             shift
             ;;
+        "-p"|"--perf-data")
+            PERF_DATA=true # Enable performance data output
+            ;;
         *)
             error 4 Unknown option: $1
             ;;
@@ -264,20 +269,34 @@ RESULT=$(iostat -xyd -m $HDD_LIST $INTERVAL 1)
 number_WARN=0
 number_CRIT=0
 
-# Initialise output return
-#RETURN=""
+# Declare rows names and values
+declare -A rows=()      # Used by performance data
+declare -A values=()
 
 while read DISK;do
     Device=$(echo $DISK|awk '{print $1}')
     # search column names:
     if echo $Device|grep -q '^Device';then
         HEAD=$(echo $DISK)
+
+        # If performance data is enable
+        if $PERF_DATA ; then
+            for i in {2..14}; do
+                rows[$i]=$(echo $DISK|awk '{print $'$i'}')
+            done
+        fi
+
     fi
 
     # grep physical devices:
     if echo $Device|grep -q -E "^${DISKS_EXPR}";then
         _util=$(echo $DISK|awk '{print $14}')
-        
+
+        # Store values in array
+        for i in {2..14}; do
+            values[$i]=$(echo $DISK|awk '{print $'$i'}')
+        done
+
         unset TMP
         # delete « . » or « , » char
         _util=${_util%%,*}
@@ -292,8 +311,24 @@ while read DISK;do
         else
             TMP="OK"
         fi
+
+        # Create end of output
+        unset END
+        for i in {2..14}; do
+            END="${END} ${values[$i]}"
+        done
         # Indent in output :
-        RETURN="${RETURN}\n${TMP} ${DISK}"
+        RETURN="${RETURN}\n${TMP} $Device ${END}%"
+
+        # If performance data is enable
+        if $PERF_DATA ; then
+            unset PERF_END
+            for i in {2..14}; do
+                PERF_END="$PERF_END ${Device}_${rows[$i]}=${values[$i]}"
+            done
+            PERF_OUTPUT="${PERF_OUTPUT} $PERF_END%"
+        fi
+
     fi
 done <<< "$RESULT"
 
@@ -305,6 +340,12 @@ elif [ $number_WARN -gt 0 ];then
     exit 1
 else
     echo -e "OK\nState: ${HEAD}\n${RETURN}"|column -t
+
+    # If performance data is enable
+    if $PERF_DATA ; then
+        echo "|$PERF_OUTPUT"
+    fi
+
     exit 0
 fi
 

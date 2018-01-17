@@ -18,12 +18,13 @@ apt install sysstat gawk bsdmainutils fdisk
 ``` shell
 check_iostat [options]
 Options:
-    -d, --devices  <disks_expr>    expression of disks search (defaut: sd|mmc)
-    -i, --interval <interval>      specifies the amount of time in seconds between each report (between 1-10, default: 5)
-    -w, --warning  <percent>       define usage warning percent (between 0-100, default: 80)
-    -c, --critical <percent>       define usage critical percent (between 0-100, default: 100)
-    -e, --examples                 show usage examples
-    -h, --help                     print this help
+    -d, --devices  <disks_expr>    Expression of disks search (defaut: sd|mmc)
+    -i, --interval <interval>      Specifies the amount of time in seconds between each report (between 1-10, default: 5)
+    -w, --warning  <percent>       Define usage warning percent (between 0-100, default: 80)
+    -c, --critical <percent>       Define usage critical percent (between 0-100, default: 100)
+    -p, --perf-data                Enable performance data output
+    -e, --examples                 Show usage examples
+    -h, --help                     Print this help
 ```
 
 # Usage examples
