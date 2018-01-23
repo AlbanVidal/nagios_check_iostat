@@ -176,8 +176,9 @@ function examples()
 function check_binary()
 {
     # $1 => binary to check
+    # $2 => package containing the binary
     if ! which $1 > /dev/null 2>&1 ;then
-        error 16 $1: binary not known
+        error 16 $1: binary not known. Please install $2 package
     fi
 }
 
@@ -264,10 +265,10 @@ if [ $WARNING -ge $CRITICAL ] ;then
 fi
 
 # Check binary
-check_binary iostat
-check_binary column
-check_binary awk
-check_binary sfdisk
+check_binary iostat sysstat
+check_binary column bsdmainutils
+check_binary awk gawk
+check_binary sfdisk 'util-linux or fdisk'
 
 # Names of hard drives, only in one line
 HDD_LIST=$(echo -n $(sfdisk -s|grep -E "^/dev/${DISKS_EXPR}"|awk '{print $1}'|sed 's/://g')|sort)
