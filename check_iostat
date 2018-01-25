@@ -178,7 +178,7 @@ function check_binary()
     # $1 => binary to check
     # $2 => package containing the binary
     if ! which $1 > /dev/null 2>&1 ;then
-        error 16 $1: binary not known. Please install $2 package
+        error 16 $1: binary not known. Please install $2 package or check your '$PATH'
     fi
 }
 
